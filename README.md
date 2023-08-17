@@ -24,6 +24,16 @@ The project directory is structured as follows:
 - `code/`: Contains R scripts used for data wrangling, analysis, and visualization.
 - `reports/`: Contains the final report in PDF format summarizing the analysis findings.
 - `README.md`: The file you are currently reading, providing an overview of the project.
+- `break_glass_in_case_of_emergency.Rds`: The `break_glass_in_case_of_emergency.Rds` file is provided specifically for JupyterHub users. It is the result of the below code and contains postcode data obtained from the `pccfNat_fccpNat_082021sav.sav` dataset using the `haven` package:
+
+  ```r
+  library(haven)
+  library(tidyverse)
+  
+  dataset <- read_sav("raw-data/pccfNat_fccpNat_082021sav.sav")
+  
+  postcode <- dataset %>% 
+    select(PC, CSDuid)
 
 ## Gitignore
 
