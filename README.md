@@ -56,19 +56,14 @@ The repository includes a `.gitignore` file that specifies which files and direc
 ### Folders
 
 - `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-- `data/`: Should contain any datasets created in `data-cleaning.Rmd` and used in `sta303-final-project.Rmd`.
 - `cache/`: Appears after setting up Canadian census data (not needed for assessment submission).
 
 ### Files
 
 - `README.md`: This file you're reading! It provides an overview of the project's contents and setup.
 - `data-prep.Rmd`: Write the code here to create the datasets you'll use in your main report. Read data from `raw-data` and the datasets you plan to use for the report into `data`. All other modeling, summaries, etc., should be done in the main Rmd.
-- `sta303-final-project.Rmd`: Update this file to create your final report. It should only use data from the `data/` folder.
+- `sta303-final-project.Rmd`: Update this file to create your final report. 
 - `report.tex`: LaTeX template for the final report (no need to edit).
-
-### Note on File Paths
-
-All file paths should be relative to `sta303-final-project.Rmd` and in the form `data/filename` or `raw-data/filename`.
 
 ## Guide to Raw Data
 
