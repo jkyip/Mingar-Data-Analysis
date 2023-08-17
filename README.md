@@ -49,7 +49,7 @@ The repository includes a `.gitignore` file that specifies which files and direc
 
 - `README.md`: This file you're reading! It provides an overview of the project's contents and setup.
 - `data-prep.Rmd`: Write the code here to create the datasets you'll use in your main report. Read data from `raw-data` and the datasets you plan to use for the report into `data`. All other modeling, summaries, etc., should be done in the main Rmd.
-- `sta303-final-project.Rmd`: Update this file to create your final report. It should only use data from the `data/` folder.
+- `sta303-final-project.Rmd`: Update this file to create your final report. 
 - `report.tex`: LaTeX template for the final report (no need to edit).
 
 ### Note on File Paths
