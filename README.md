@@ -88,9 +88,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 For any questions or feedback about this project, please feel free to contact us:
 
-- Chun Ki Yip: [email@example.com](mailto:email@example.com)
-- James Bai: [email@example.com](mailto:email@example.com)
-- Tsogjavkhlant Chuluunzorigt: [email@example.com](mailto:email@example.com)
-- Yunqi Jia: [email@example.com](mailto:email@example.com)
+- Chun Ki Yip: [jackyyipchunki@gmail.com](mailto:jackyyipchunki@gmail.com)
+
 
 We appreciate your interest in our project and hope you find the analysis informative and useful!
