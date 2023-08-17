@@ -1,0 +1,398 @@
+---
+title: "Data Analysis for Mingar"
+subtitle: "The new customers have lower median income and people with darker emoji have more flags during sleep sessions"
+author: "Report prepared for MINGAR by CJYB "
+date: 2022-04-07
+lang: "en"
+output:
+  pdf_document:
+    template: report.tex
+    toc: true
+    toc_depth: 2
+titlepage: true
+titlepage-color: "6C3082"
+titlepage-text-color: "FFFFFF"
+titlepage-rule-color: "FFFFFF"
+titlepage-rule-height: 2
+---
+
+```{r, message = FALSE, echo=FALSE}
+library(tidyverse)
+library(lme4)
+library(rvest)
+library(polite)
+library(lmtest)
+library(huxtable)
+
+# this should suppress all code and messages
+knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(warning=FALSE)
+```
+
+```{r}
+# Read in the data
+customer_data <- read_rds("customer_data.Rds")
+customer_data_sleep <- read_rds("customer_data_sleep.Rds")
+```
+
+\newpage
+# Executive summary
+We are a consulting firm that specialize in statistical consulting. Mingar has given us two problems to solve. The first problem is to find out who are the new customers that use the ‘Active’ and ‘Advanced’ product and compare them to the traditional users. With emphasis on whether the two new lines have attracted customers outside of the traditional line or not. The second problem is that the social media team of Mingar found a trend that suggests that customers with darker skins result in poorer performance on the devices. We were asked to investigate that.
+
+Problem 1:
+
+* Median income is the only variable that really impacts the outcome of whether a customer is using “Active and Advanced” or traditional products.
+* The average median income for customers who bought the “Active and Advanced” line is \$67,487.65CAD, the average median income for the traditional customer is \$73,550.55CAD. The average median income for traditional is 8.98% higher than the median income for “Active and Advanced”.
+* The average median income for traditional is 8.98% higher than the median income for “Active” and “Advanced”.
+
+Problem 2:
+
+* We have observed that users who have darker skin have a higher number of flags in contrast to those who have lighter skin.
+* Young users who have dark skin have the highest number of flags. 
+* We would suggest the development team of Mingar to take a look at the censor of each device as that may be the cause of why users with darker skins have more flags.
+
+\newpage
+```{r,out.height="75%",out.width="75%",fig.cap="Comparison of Average Income of Different Device Users"}
+# Create a visualization
+counts <- customer_data %>% 
+  group_by(line) %>%
+  summarize(mean=mean(median_income)) %>% mutate(Release = ifelse(line == "Active", "New", ifelse(line == "Advance", "New", "Traditional")))
+
+ggplot(data = counts, aes(x = line, y= mean, fill= Release)) + geom_bar(stat = "identity") +
+  scale_color_manual(values=c("#78BC61", "#E03400"),labels=c("New", "Tradtional"))+
+scale_fill_manual(values=c("#78BC61", "#E03400"),labels=c("New","Traditional")) + theme_minimal() + labs(x = "Model", y = "Average Income of Users", fill = "New/Traditional", caption = "Created by CJYB Consulting Group Inc") 
+
+```
+
+```{r,out.height="75%",out.width="75%", fig.cap="Plot the relationship between flags and duration grouped by skin tone pf users"}
+# Create a graph showing the relationship between flags and duration grouped by skin tone pf users
+ggplot(customer_data_sleep, aes(x=duration, y=flags, color= skin_tone )) +geom_point() + theme_minimal() + labs(x= "Sleep Duration", y = "Number of Flags", color = "Skin Tone", caption = "Created by CJYB Consulting Group Inc")
+```
+
+\newpage
+# Technical report
+
+## Introduction
+Famous Statistician Karl Pearson once said “statistics is the grammar of science”. Even though statistics can be misleading sometimes, it is still one of the best ways at supporting the reasoning behind a cause when you can’t find the true reason behind said cause. CJYB Consulting Group Inc. is a consulting firm that specializes in statistical consulting. Mingar is a company that produces products aimed for outdoor recreation, such as high-end fitness tracking devices. They recently added two new product lines, “Active” and “Advanced”, at a more approachable price point for the average consumers in contrast to their traditional customers.
+
+
+### Research questions
+Mingar has given two questions to CJYB Consulting Group Inc. to resolve: 
+
+* The first question is from their marketing team, asking who the new customers are. How are the buyers for the newer “Active” and “Advanced” different from the traditional customers with focus on whether the two new lines had attracted new customers outside of the traditionally higher income base.
+* The second question is from their social media team. They have picked up a trend in complaints regarding customers with darker skins having poor performance from their devices, especially with the sleep score. We were asked to investigate this.
+
+## Methods
+
+### Data description and wrangling
+&nbsp;
+
+For our statistical analysis, we will prepare two data sets, one to support our analysis on research question 1 and another to support our analysis on research question 2. For the first question we are interested in analyzing the median income difference between new customers and old customers, so we would be using the customer’s data, median income to predict whether the customer would buy the new line of device or the old line of device. For the second question, we are interested in analyzing the number of flags, which indicates quality issues in data by the customer’s data, especially the skin tone of the customer which we would use the emoji modifier to approximate [5]. 
+
+For both data sets, we will use the customer ID, date of birth, biological sex, postal code, device ID, and the emoji modifier from the customer list dataset and combine it with the device data to get the corresponding device name and line of device of each device ID so we can obtain each customer’s specific device and line of their device [6]. We will also generate a new variable called release, which is a binary variable indicating whether the line of device is one of the newer lines represented by 1, or the traditional line represented by 0 in order to differentiate the new customers from the traditional customers [6]. 
+
+Note that the date of birth was converted to a discrete variable current age which is rounded down to the closest year. Also note that the emoji modifier was converted into a discrete variable named skin tone which used conversion of the unicode to a skin tone color from the emoji chart from unicode.org [6]. 
+
+For the first dataset we will use the median income and CSduid data from web scraping CensusMapper [8]. The CSduid is a location code used in the census, we will use the conversion file provided by Statistics Canada to convert each CSduid to the first corresponding postal code, for postal codes with two CSduid, we will take the mean of the median income of the same postal code so there is one median household income corresponding to each postal code. Then we will combine the customer data with the median income and postal code data by matching the postal code to get a predicted household median income for each customer.
+
+For the second data set, we will take the customer ID, sleep duration, and the number of flags which indicate quality issue of the data or missing data from the sleep log data, and sum the sleep duration and flags of every individual customer based on each sleep log’s customer ID in order get a sleep log dataset which each observation is independent to each other. Then this new summed sleep log dataset would be combined with the customer data set so each customer would have their own summed sleep log if their sleep data was logged [6]. 
+
+Note that we omitted any observations that is missing a data point for both datasets, so specifically, we omitted any customer that had NA for sex but we included intersex, and we ommited customers that had NA for their emoji modifier, which means they had their skin tone set as the default yellow color which is not a real skin tone. After the omissions we have 14267 customer’s data for the first dataset and 719 customer’s data for the second data set. 
+
+\newpage
+### Data Visualizations and Summary
+&nbsp;
+
+```{r,fig.cap="Comparison of Average Income of Different Device Users"}
+# Create a visualization
+counts <- customer_data %>% 
+  group_by(line) %>%
+  summarize(mean=mean(median_income)) %>% mutate(Release = ifelse(line == "Active", "New", ifelse(line == "Advance", "New", "Traditional")))
+
+ggplot(data = counts, aes(x = line, y= mean, fill= Release)) + geom_bar(stat = "identity") +
+  scale_color_manual(values=c("#78BC61", "#E03400"),labels=c("New", "Tradtional"))+
+scale_fill_manual(values=c("#78BC61", "#E03400"),labels=c("New","Traditional")) + theme_minimal() + labs(x = "Model", y = "Average Income of Users", fill = "New/Traditional", caption = "Created by CJYB Consulting Group Inc") 
+
+```
+
+
+Figure 3 is a bar graph showing the average income of the users for each line of device, and using color to indicate the traditional lines and the new lines. We can observe that the two traditional lines have higher average income than the two new lines.
+
+
+```{r, fig.cap="Median Income Distributions of Different Device Users" }
+# Create a graph of the median income distributions of different device users
+ggplot(customer_data) + 
+  geom_boxplot(aes(factor(Release), median_income)) + 
+  scale_x_discrete(labels = c('Tradition','New')) + theme_minimal() + 
+  labs(y = "Median Income", x = "Traditional or New", caption = "Created by CJYB Consulting Group Inc")+
+  ggtitle("Median Income Distributions of Traditional vs New Device Users")
+
+```
+
+Figure 4 is a box plot depicting the income distribution of the old lines of devices and the new line of devices. We can observe that the box representing the income distribution of the new line of devices is lower than the box representing the income distribution of the old lines of devices. 
+
+```{r,fig.cap="Frequency table of different income levels"}
+# Create a table showing the comparison of different device users based on median income
+table3 <- customer_data %>%
+  mutate(income_interval= cut(median_income, c(40000, 79999, 119999, 159999, 199999), include.lowest = TRUE)) %>%
+  group_by(income_interval) %>%
+  summarize(Traditional = sum(Release == "0"), New = sum(Release == "1"))
+
+table3 <- table3[-1]
+rownames(table3) = c("[40000,79999]", "(80000,119999]", "(120000,159999]", "(160000, 200000]")
+
+table3 %>% knitr::kable(caption = "Comparing different device users based on median income")
+```
+
+```{r,fig.cap="Proportion of different median income levels"}
+# Create a table comparing proportions of median income of users
+old1 <- round(table3[1,1]/sum(table3[1]), 2)
+old2 <- round(table3[2,1]/sum(table3[1]), 2)
+old3 <- round(table3[3,1]/sum(table3[1]), 2)
+old4 <- round(table3[4,1]/sum(table3[1]), 2)
+new1 <- round(table3[1,2]/sum(table3[2]), 2)
+new2 <- round(table3[2,2]/sum(table3[2]), 2)
+new3 <- round(table3[3,2]/sum(table3[2]), 2)
+new4 <- round(table3[4,2]/sum(table3[2]), 2)
+
+table4 <- matrix(c(old1,old2,old3,old4,new1,new2,new3,new4), ncol = 2)
+rownames(table4) <- c("[40000, 79999]", "[80000, 119999]", "[120000, 159999]", "[160000, 200000]")
+colnames(table4) <- c("Traditional", "New")
+
+table4 %>% knitr::kable(caption = "Comparing proportions of median income of users")
+```
+
+Table 1 and 2 shows the frequency and proportion respectively of users between the traditional and new line of 4 different income levels. We can observe that there are more new users in the lowest level of income, specifically 6068 compared to 4194, and from table 2 we can observe that 66% of the traditional users are in the lowest income level while 77% of the new users are in this income level . We can also observe that there are more traditional users in the second level of income which is the higher level of income than the new users, specifically 2141 to 1845, and from table 2 we can observe that 34% of the traditional users are in this higher level of income while 23% of the new users are in this higher level of income. The third and fourth level of income has too few users that the data is not relevant as we can see they are both 0% rounded to 2 decimal places in table 2. 
+
+```{r,fig.cap= "Comparison of Median Income of Different Device Users"}
+# Create a histogram to compare different device users based on median income
+customer_data1 <- customer_data %>% mutate(traditional = ifelse(Release == 0, "Traditional", "New"))
+ggplot(customer_data1, aes(x=median_income, fill= traditional)) +
+    geom_histogram(binwidth=5000,alpha=.5, position="identity") + theme_minimal() + labs(fill = "Traditional/New", x = "Median Income", y = "Number of Users", caption = "Created by CJYB Consulting Group Inc") 
+```
+
+Figure 5 is a histogram showing the distribution of median income, differentiating the distribution from the traditional line of users from the new line of users. We can observe that all the bins of income have both new users and old users, meaning that there are new and old customers in all income ranges. But we can see that there are more new users in the left bins meaning there are more new users that have lower median incomes, while there are more traditional users in the right bins meaning that there are more traditional users that have higher income. 
+
+```{r, fig.cap= "Plot the relationship between flags and duration grouped by skin tone pf users"}
+# Create a graph showing the relationship between flags and duration grouped by skin tone pf users
+ggplot(customer_data_sleep, aes(x=duration, y=flags, color= skin_tone )) +geom_point() + theme_minimal() + labs(x= "Sleep Duration", y = "Number of Flags", color = "Skin Tone", caption = "Created by CJYB Consulting Group Inc")
+```
+
+Figure 6 shows a scatter plot graphing the duration versus the number of flags with different skin tones indicating different colors. From this scatter plot, we can observe that there are 5 very obvious separation of points which are separated by the colors of skin tone, where the darker the skin tone the higher the number of flags are. We can also observe a slight positive slope between the duration and the flags, but it is not obvious in the lighter skin tones. 
+
+```{r, fig.cap= "Plot the relationship between flags and age grouped by skin tones of users"}
+# Create a graph showing the relationship between flags and age grouped by skin tones of users
+ggplot(customer_data_sleep, aes(x=Current_age, y=flags, color= skin_tone )) +geom_point() + theme_minimal() + labs(x= "Current Age", y= "Number of Flags", color = "Skin Tone" , caption = "Created by CJYB Consulting Group Inc")
+```
+
+Figure 7 shows a scatter plot graphing the current age versus the number of flags with different skin tones indicating different colors. From this scatter plot, we can observe again the 5 obvious separation of points which are separated by the colors of the skin tone, we can also observe a slight decreasing slope between the current age and the number of flags. 
+
+
+### Method Description for Question 1
+&nbsp;
+
+
+For the nature of the question we have decided to use linear regression as a main method to approach the data analysis. The overall idea of regression is to examine two things: (1) does a set of predictor variables do a good job in predicting an outcome (dependent) variable?  (2) Which variables in particular are significant predictors of the outcome variable. These regression estimates are used to explain the relationship between one dependent variable and one or more independent variables. 
+
+ For question 1, we are trying to analyze how the buyers for the newer “Active” and “Advanced” are different from the traditional customers. Therefore, our response variable is Release, which is the indication of whether the device is the traditional one or the new one (Active and Advance) indicated by 0 and 1 respectively. The most appropriate model to use was the general linear model, specifically logistic regression model since our response is a binary variable [4]. We have many predictor variables and to see which ones are significant with the response we run several models with different predictors. This process is called forward selection. Forward selection is a type of stepwise regression which begins with an empty model and adds in variables one by one. We have used the AIC value and the likelihood ratio test to determine the best model. For models with the same number of variables, we used AIC values to compare. After we choose the model with higher AIC, we used likelihood ratio tests to compare models with different numbers of variables. Likelihood ratio tests can help us determine whether or not adding complexity to our model makes our model significantly more accurate. The result indicated that only median income was significant with the response. 
+
+ $$\log(\frac{\hat{\mathrm{P}}_{release}}{1-\hat{\mathrm{P}}_{release}})= \beta_0 + \beta_1 x_{\mathrm{median\_ income}} $$
+
+Where $\hat{\mathrm{P}}_{release}$ represents the proportion of product being “Active” or “Advanced”, $\beta_0$ represents the intercept, and $\beta_1$ represents the slope of median income.
+ 
+
+
+
+
+```{r, include=FALSE}
+# Build models and select the best model
+mod0 <- glm(Release ~ median_income, data = customer_data, family = "binomial")
+summary(mod0)
+confint(mod0)
+
+mod1a <- glm(Release ~ median_income + scales::rescale(Current_age), data = customer_data, family = "binomial")
+summary(mod1a)
+confint(mod1a)
+
+mod1b<- glm(Release ~ median_income + sex, data = customer_data, family = "binomial")
+summary(mod1b)
+confint(mod1b)
+
+mod1 <- glm(Release ~ scales::rescale(Current_age) + median_income + sex, data = customer_data, family = "binomial")
+summary(mod1)
+confint(mod1)
+
+lmtest::lrtest(mod0, mod1b)
+lmtest::lrtest(mod1a, mod1)
+lmtest::lrtest(mod1a, mod0)
+# Based on the results from AIC and likelihood ratio tests, we decide to use mod0 as the final model.
+```
+
+
+
+### Method Description for Question 2
+&nbsp;
+
+
+For question 2, we are trying to analyze what is affecting the poor performance of the device, especially sleep scores. Therefore, the response variable for this question is flag, which indicates the number of times there was a quality flag during the sleep session. For this question, we have decided to use a generalized linear mixed model because our response is count and we used poisson regression [4]. In order to determine which predictors are significant we modeled the response against the predictors and the result can tell us which predictors are fixed effects. This is because statistical significance indicates that changes in the independent variables correlate with shifts in the dependent variable. Therefore, our fixed effects are skin tone and current age. Given this information we use the generalized linear mixed model to assess which random effects are significant. The method to pick the best model follows the same procedure as question 1 where we add the random effects one by one. For models with the same number of variables, we used AIC values to compare. After we choose the model with higher AIC, we used likelihood ratio tests to compare models with different numbers of variables. Likelihood ratio tests can help us determine whether or not adding complexity to our model makes our model significantly more accurate [1]. The result indicates that the model with skin tone and current age as fixed effect and gender as random effect resulted in the best model. 
+
+Model for 2:  
+$$
+\begin{aligned}
+  Y_{\operatorname{flags}{i}} &\sim \operatorname{Poisson}(\lambda_i) \\
+    \log(\lambda_i) &=\alpha_{ji} + \beta_{1}x_{\operatorname{skin\_tone}_{\operatorname{light}}} + \beta_{2}x_{\operatorname{skin\_tone}_{\operatorname{medium}}}\ + \\
+&\quad \beta_{3}x_{\operatorname{skin\_tone}_{\operatorname{medium-dark}}} + \beta_{4}x_{\operatorname{skin\_tone}_{\operatorname{medium-light}}} + \beta_{5}x_{Current\_age} \\
+    \alpha_{j}  &\sim N \left(\mu_{\alpha_{j}}, \sigma^2_{\alpha_{j}} \right)
+    \text{, for sex j = 1,} \dots \text{,J}
+\end{aligned}
+$$
+Where $Y_{\operatorname{flags}{i}}$ represents the number of flags for individual i, $\alpha_{ji}$ represents the intercept of customer i at jth sex, $\beta_1\dots\beta_4$ represents the slope for skin tones of customer, and $\beta_5$ represents the slope for the current age of customer. 
+
+
+
+```{r, include= FALSE}
+# Build the basic model to decide fixed effects
+mod2 <- glm(flags ~ skin_tone + Current_age + line + sex + offset(log(duration)),
+            data = customer_data_sleep, family = "poisson")
+summary(mod2)
+
+# From the results, we decide to use age and skin_tone as the fixed effects.
+```
+
+```{r, include= FALSE}
+# Build models and select the best model
+mod3 <- lme4::glmer(flags ~ skin_tone + scales::rescale(Current_age) + offset(log(duration)) + (1|line), family = "poisson", data =customer_data_sleep)
+summary(mod3)
+confint(mod3)
+
+mod4 <- lme4::glmer(flags ~ skin_tone + scales::rescale(Current_age) + offset(log(duration)) + (1|sex), family = "poisson", data =customer_data_sleep)
+summary(mod4)
+confint(mod4)
+
+
+mod5 <- lme4::glmer(flags ~ skin_tone + scales::rescale(Current_age) + offset(log(duration)) + (1|sex) + (1|line), family = "poisson", data =customer_data_sleep)
+summary(mod5)
+confint(mod5)
+
+lmtest::lrtest(mod4, mod5)
+
+# Based on the results from AIC and likelihood ratio tests, we decide to use mod4 as our final model.
+```
+```{r, warning= FALSE}
+
+huxreg(mod0)
+```
+
+```{r, warning= FALSE}
+huxtable::huxreg(mod4)
+```
+
+
+\newpage
+
+&nbsp;
+
+```{r,out.height="75%",out.width="75%"}
+# Check assumptions
+plot(mod4)
+```
+
+```{r,out.height="75%",out.width="75%"}
+qqnorm(residuals(mod4))
+# In the residual versus fitted value plot, the residuals don't seem to have any pattern. The qqplot shows that the data seems to be normally distributed. Therefore, our assumptions are satisfied. 
+```
+&nbsp;
+
+We checked the assumption for our model. In the residual versus fitted value plot, the residuals don't seem to have any pattern. The qqplot shows that the data seems to be normally distributed. Therefore, our assumptions are satisfied. 
+\newpage
+
+## Result
+
+### Question 1
+&nbsp;
+
+From figure 3, figure 4 and figure 5, we can see that people who have the new model have lower median income whereas people with the traditional model tend to have higher median income. The average median income of people who have the “Active and Advance” is 67,487.65 CAD whereas the average median income of people who have the traditional device is 73,550.55 CAD. Our final model for question 1 has a p-value of 2e^-16  for median income which suggests it has a significant impact. This clearly shows that the new customers have lower median income. The confidence interval of the median income at a 5% significance level is (-2.211634e-05, -1.752901e-05). This suggests that the true parameter value is inside this interval. 
+
+### Question 2
+&nbsp;
+
+From figure 6, we can observe that the darker the skin tone is the higher the number of flags there are. The final model for question 2 suggests that the p-values of the skin tones and age is smaller than 0.05 which means they are significant. From figure 7, we can see that younger people with darker skin tone tend to have a higher number of flags during sleep sessions. Also, as age increases for the medium-dark and dark people, the number of flags decreases. The true parameter values for skin tone and age are within the confidence interval at 5% significance level.
+
+## Conclusion
+
+Our objective was to investigate the two requests from Mingar. For the first question, the results of the graphs and models suggest that the new customers buying the “Active and Advance” products have lower median income in contrast to the traditional customers. As for the second question, our model shows that devices of customers with darker skin have more flags during their sleep session. We would suggest the product development team of Mingar to check the censor of their devices as it may be the cause as to why devices of customers with darker skins have poor sleep quality. 
+
+## Limitations
+
+When working on these questions, we have encountered a few limitations. One of them being when comparing income for each line of products, we used the median income of each customer’s area code. Since we don’t have the income information of every customer, this is the best way for us to get an idea of how income level would represent each product line. This however may not showcase the correct income level of the customers. For example, it is possible that a group of users live in an area code that contains a small group of extremely wealthy people who use the traditional products, while the rest are around the city median income. This would cause the median income of that area code to simply be around the city median, which would not correctly represent the group of customers. 
+
+One other limitation we faced was we don’t have a more complete data on the customers. Which caused us to not be able to narrow the customers of each type of product line any further. If we were given a more complete data on the users such as BMI, we could describe a more specific image of customers using each type of line.
+
+Another concern we faced was that we don’t have data regarding each customer’s race. When brainstorming for ideas on how to approach question 2, we decided the colour of emoji used by the customer would represent their race as this is the best way to relate the data to race when we’re not given data regarding each customer’s racial identity. The problem with this method is that this may not correctly represent the customer’s actual race as there may be some customer who doesn’t change their emoji colour at all and uses the default colour. There may also be some customers who would deliberately change to another colour that doesn’t reflect their race. 
+\newpage
+
+# Consultant information
+## Consultant profiles
+**Chun Ki Yip**.
+I am one of the co-founders of CJYB Consulting Group Inc. I have more than 20 years of industry experience and I spend my spare time reading about statistics to improve my craft. 
+
+**James Bai**.
+I am one of the co-founders of CJYB Consulting Group Inc. I have more than 20 years of industry experience. I like to play basketball and badminton in my free time.
+
+**Tsogjavkhlant Chuluunzorigt **.
+I am one of the co-founders of CJYB Consulting Group Inc. I have more than 20 years of industry experience. I have worked on many projects. 
+
+**Yunqi Jia**.
+I am one of the co-founders of CJYB Consulting Group Inc. I have more than 20 years of industry experience. I have worked on many projects. 
+
+
+
+# Code of ethical conduct
+
+Responsibility to Client
+
+* We will not disclose any confidential data provided by the client.
+* We will not mislead the client with skewed analysis and data graphics.
+* We will declare any conflict of interest to my clients.
+
+Responsibility as a Statistician
+
+* We will abide by the rules of ethical scrapping.
+* We will give credit where credit is due.
+* We will use the most appropriate statistical method to the best of our knowledge.
+
+Professionalism
+
+* We take responsibility for our work and encourage review and critics to assess our work.
+* We will only provide services in areas which we are knowledgeable at.
+* We will not misrepresent our work for any interest. 
+
+
+
+
+\newpage
+# References
+
+1. Achim Zeileis, Torsten Hothorn (2002). *Diagnostic Checking in Regression Relationships.* R News 2(3), 7-10. URL https://CRAN.R-project.org/doc/Rnews/
+2. David Hugh-Jones (2021). *huxtable: Easily Create and Style Tables for LaTeX, HTML and Other Formats.* R package version 5.4.0. https://hughjonesd.github.io/huxtable/
+3. Dmytro Perepolkin (2019). *polite: Be Nice on the Web.* R package version 0.1.1. https://github.com/dmi3kno/polite
+4. Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker (2015). *Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software,* 67(1), 1-48. doi:10.18637/jss.v067.i01.
+5. *Full emoji modifier sequences,* V14.0 - unicode. (n.d.)., from https://www.unicode.org/emoji/charts/full-emoji-modifiers.html 
+6. Hadley Wickham (2021). *rvest: Easily Harvest (Scrape) Web Pages.* https://rvest.tidyverse.org/,https://github.com/tidyverse/rvest.
+7. *Postal code conversion file.* Postal code conversion file | Map and Data Library. (n.d.)., from https://mdl.library.utoronto.ca/collections/numeric-data/census-canada/postal-code-conversion-file 
+8. von Bergmann J, Shkolnik D, Jacobs A (2021).* cancensus: R package to access, retrieve, and work with Canadian Census data and geography.* R package version 0.4.2, https://mountainmath.github.io/cancensus/.
+
+\newpage
+# Appendix
+
+The web scraping statement was checked for CensusMapper [8], the statement indicates that web scraping is allowed as long as delay of web scraping is set to 5 seconds which was followed carefully [3]. In order to web scrape on CensusMapper, an account was made to obtain an API key and the API cancensus is used. The population, median household income and CSduid were scraped from the website to create a table. The postal code conversion file was accessed in the University of Toronto database. This conversion file is created based on data licensed by Canada Post Corporation and provided by Statistics Canada, the uses of this conversion data file is limited to teaching and learning purposes, research purposes, and planning purposes of University of Toronto faculty and students [7]. This was considered but not followed because our consulting work is ultimately a private commercial project, but we would release a version of our consulting report with simulated customer data which doesn’t break our NDA with our client’s data for teaching purposes. 
+
+
+## Code appendix
+```{r}
+# Web scrape the census data
+library(polite)
+url <- "https://censusmapper.ca/"
+session <- bow(url)
+session
+```
