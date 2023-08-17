@@ -31,7 +31,6 @@ We are grateful for the opportunity to undertake this project as part of our aca
 The project directory is structured as follows:
 
 - `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-- `data/`: Contains datasets created in `data-prep.Rmd` and used in `sta303-final-project.Rmd`.
 - `code/`: Contains R scripts used for data wrangling, analysis, and visualization.
 - `reports/`: Contains the final report in PDF format summarizing the analysis findings.
 - `README.md`: The file you are currently reading, providing an overview of the project.
@@ -40,15 +39,11 @@ The project directory is structured as follows:
 
 The repository includes a `.gitignore` file that specifies which files and directories should be ignored by Git. This helps keep the repository clean and focused. Files and directories such as compiled code, temporary files, user-specific settings, and generated output are excluded from version control. For a complete list of ignored files and directories, please refer to the `.gitignore` file in the root directory.
 
-## Folder and File Structure
 
-### Folders
-
-- `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-
-### Files
+## Files
 
 - `README.md`: This file you're reading! It provides an overview of the project's contents and setup.
+- `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
 - `data-prep.Rmd`: Write the code here to create the datasets you'll use in your main report. Read data from `raw-data` and the datasets you plan to use for the report into `data`. All other modeling, summaries, etc., should be done in the main Rmd.
 - `sta303-final-project.Rmd`: Update this file to create your final report. It should only use data from the `data/` folder.
 - `report.tex`: LaTeX template for the final report (no need to edit).
