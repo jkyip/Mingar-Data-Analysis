@@ -25,6 +25,10 @@ The project directory is structured as follows:
 - `reports/`: Contains the final report in PDF format summarizing the analysis findings.
 - `README.md`: The file you are currently reading, providing an overview of the project.
 
+## Gitignore
+
+The repository includes a `.gitignore` file that specifies which files and directories should be ignored by Git. This helps keep the repository clean and focused. Files and directories such as compiled code, temporary files, user-specific settings, and generated output are excluded from version control. For a complete list of ignored files and directories, please refer to the `.gitignore` file in the root directory.
+
 ## Folder and File Structure
 
 ### Folders
