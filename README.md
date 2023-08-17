@@ -48,9 +48,6 @@ The repository includes a `.gitignore` file that specifies which files and direc
 - `sta303-final-project.Rmd`: Update this file to create your final report. It should only use data from the `data/` folder.
 - `report.tex`: LaTeX template for the final report (no need to edit).
 
-### Note on File Paths
-
-All file paths should be relative to `sta303-final-project.Rmd` and in the form `data/filename` or `raw-data/filename`.
 
 ## Guide to Raw Data
 
