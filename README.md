@@ -31,7 +31,6 @@ We are grateful for the opportunity to undertake this project as part of our aca
 The project directory is structured as follows:
 
 - `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-- `data/`: Contains datasets created in `data-prep.Rmd` and used in `sta303-final-project.Rmd`.
 - `code/`: Contains R scripts used for data wrangling, analysis, and visualization.
 - `reports/`: Contains the final report in PDF format summarizing the analysis findings.
 - `README.md`: The file you are currently reading, providing an overview of the project.
@@ -45,8 +44,6 @@ The repository includes a `.gitignore` file that specifies which files and direc
 ### Folders
 
 - `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-- `data/`: Should contain any datasets created in `data-cleaning.Rmd` and used in `sta303-final-project.Rmd`.
-- `cache/`: Appears after setting up Canadian census data (not needed for assessment submission).
 
 ### Files
 
@@ -57,7 +54,7 @@ The repository includes a `.gitignore` file that specifies which files and direc
 
 ### Note on File Paths
 
-All file paths should be relative to `sta303-final-project.Rmd` and in the form `data/filename` or `raw-data/filename`.
+All file paths should be relative to `sta303-final-project.Rmd` and in the form `raw-data/filename`.
 
 ## Guide to Raw Data
 
