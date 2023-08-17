@@ -51,15 +51,8 @@ The project directory is structured as follows:
 
 The repository includes a `.gitignore` file that specifies which files and directories should be ignored by Git. This helps keep the repository clean and focused. Files and directories such as compiled code, temporary files, user-specific settings, and generated output are excluded from version control. For a complete list of ignored files and directories, please refer to the `.gitignore` file in the root directory.
 
-## Folder and File Structure
-
-### Folders
-
+## Files
 - `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-- `cache/`: Appears after setting up Canadian census data (not needed for assessment submission).
-
-### Files
-
 - `README.md`: This file you're reading! It provides an overview of the project's contents and setup.
 - `data-prep.Rmd`: Write the code here to create the datasets you'll use in your main report. Read data from `raw-data` and the datasets you plan to use for the report into `data`. All other modeling, summaries, etc., should be done in the main Rmd.
 - `sta303-final-project.Rmd`: Update this file to create your final report. 
