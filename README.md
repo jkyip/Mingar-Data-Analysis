@@ -7,12 +7,24 @@ This repository contains the code and documentation for a data analysis project 
 
 ## Project Overview
 
+Students acting as a consulting group received data as well as web scraping, accessing an API and retrieving licensed data, and then used these to merge, wrangle, visualize, summarize and model data on fitness tracker customers to meet a client brief, and reported on their methods and findings appropriately for a general executive audience and, separately, for a technical audience.
+
 The analysis is carried out in R and involves various data wrangling, visualization, and statistical modeling techniques. The project includes the following main components:
 
 - Data collection: The data was collected from various sources, including customer data and sleep log data.
 - Data wrangling: The collected data was cleaned, transformed, and combined to create suitable datasets for analysis.
 - Exploratory data analysis: Various data visualizations were created to explore the relationships between different variables.
 - Statistical modeling: Linear regression and generalized linear mixed models were used to answer the research questions.
+
+## Course Information
+
+This data analysis project serves as the final project for STA303 at the University of Toronto. As part of this course, our consulting group was tasked with conducting a comprehensive analysis of fitness tracker customer data. The project involved data collection, web scraping, API integration, and licensed data retrieval to meet the specific requirements of a client brief.
+
+For detailed project requirements and guidelines, please refer to the [STA303 Final Project Description](https://sta303-bolton.github.io/sta303-w22-final-project/). This resource provides insight into the scope, objectives, and expectations of the project.
+
+The collaborative effort within our consulting group showcases our ability to apply advanced analytical techniques and communicate findings effectively to diverse audiences, while delivering practical and data-driven recommendations.
+
+We are grateful for the opportunity to undertake this project as part of our academic journey, and we look forward to sharing the insights and skills we have gained through this experience.
 
 ## Project Structure
 
