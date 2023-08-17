@@ -45,8 +45,6 @@ The repository includes a `.gitignore` file that specifies which files and direc
 ### Folders
 
 - `data-raw/`: Contains the raw data provided by the client, as well as the licensed data for postcode conversion, census data, and web scraping results (not to be made publicly available).
-- `data/`: Should contain any datasets created in `data-cleaning.Rmd` and used in `sta303-final-project.Rmd`.
-- `cache/`: Appears after setting up Canadian census data (not needed for assessment submission).
 
 ### Files
 
