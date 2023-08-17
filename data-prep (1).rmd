@@ -1,0 +1,130 @@
+---
+title: "Data preparation"
+output:
+  pdf_document: default
+---
+
+# Instructions
+
+- You only need to submit the .Rmd of this file, not a PDF.
+
+- You should __comment__ your code clearly to show what you've done to prepare the data.
+
+- The purpose of this file is to use the data in the `data-raw` folder to create the data you will use in the report. The data you will use in the report should be saved in the `data` folder. It is good professional practice to make sure you're never directly modifying your raw data, but instead creating new datasets based on merges/manipulations that you need to reuse.
+
+- Make sure you've taken a look at the hints for the web scraping and census API. 
+
+- You may find the `write_rds()` function from the `readr` package helpful (it is loaded as part of the `tidyverse`).
+
+- You do not need to keep the structure below.
+
+# Set up
+
+```{r, libraries}
+# Set up the library
+library(tidyverse)
+```
+
+# Loading client data
+
+```{r}
+# Read in the data
+cust_dev <- read_rds("data-raw/cust_dev.Rds")
+cust_sleep <- read_rds("data-raw/cust_sleep.Rds")
+customer <- read_rds("data-raw/customer.Rds")
+device <- read_rds("data-raw/device.Rds")
+break_glass_in_case_of_emergency <- read_rds("data-raw/break_glass_in_case_of_emergency.Rds")
+```
+
+```{r}
+# Cleaning and merging data
+customer_data <- full_join(customer, cust_dev, by = "cust_id")
+customer_data <- merge(customer_data,device)[-1][-9]
+customer_data <- customer_data %>% mutate(skin_tone = case_when(emoji_modifier == "U+1F3FB" ~ "light",emoji_modifier == "U+1F3FC" ~ "medium-light",emoji_modifier == "U+1F3FD" ~ "medium",emoji_modifier == "U+1F3FE" ~ "medium-dark",emoji_modifier == "U+1F3FF" ~ "dark"))
+customer_data <- customer_data[-6]
+customer_data$Current_age = floor(as.numeric(difftime(Sys.Date(),customer_data$dob))/365)
+customer_data <- customer_data[-2]
+customer_data <- na.omit(customer_data)
+
+cust_sleep_new <- cust_sleep[-2] %>% group_by(cust_id)
+cust_sleep_new <- cust_sleep_new %>%  summarise(duration = sum(duration), flags = sum(flags), duration_per_flag = (duration/flags))
+customer_data_sleep <- merge(customer_data, cust_sleep_new, by = "cust_id") 
+customer_data_sleep <- na.omit(customer_data_sleep)
+```
+
+```{r}
+# Convert the variable skin_tone to a factor variable and reorder its levels
+customer_data_sleep <- customer_data_sleep %>%
+  mutate(skin_tone = as_factor(skin_tone)) %>%
+  mutate(skin_tone = fct_relevel(skin_tone, "light", after = 0)) %>%
+  mutate(skin_tone = fct_relevel(skin_tone, "medium-light", after = 1)) %>%
+  mutate(skin_tone = fct_relevel(skin_tone, "medium", after = 2)) %>%
+  mutate(skin_tone = fct_relevel(skin_tone, "medium-dark", after = 3)) %>%
+  mutate(skin_tone = fct_relevel(skin_tone, "dark", after = 4))
+```
+
+# Census API
+
+```{r}
+# Get the cencus data and median_income dataset
+#install.packages("cancensus")
+library(cancensus)
+
+
+options(cancensus.api_key = "CensusMapper_7859944e6c55360f4dcb35f113b08e48",
+        cancensus.cache_path = "cache") # this sets a folder for your cache
+
+
+# Get all regions as at the 2016 Census (2020 not up yet)
+regions <- list_census_regions(dataset = "CA16")
+
+regions_filtered <-  regions %>% 
+  filter(level == "CSD") %>% 
+  as_census_region_list()
+
+# Get household median income
+census_data_csd <- get_census(dataset='CA16', regions = regions_filtered,
+                          vectors=c("v_CA16_2397"), 
+                          level='CSD', geo_format = "sf")
+
+# Simplify to only needed variables
+median_income <- census_data_csd %>% 
+  as_tibble() %>% 
+  select(CSDuid = GeoUID, contains("median"), Population) %>% 
+  mutate(CSDuid = parse_number(CSDuid)) %>% 
+  rename(hhld_median_inc = 2)
+
+```
+
+```{r}
+# Merge median_income and postal_code file
+median_income_new <- merge(median_income, break_glass_in_case_of_emergency, by = "CSDuid")
+```
+
+
+```{r}
+# Clean median_income_new dataset
+median_income_new <- median_income_new %>%
+  na.omit() %>%
+  group_by(PC) %>%
+  summarize(median_income = mean(hhld_median_inc))
+```
+
+```{r}
+# Merge median_income_new and customer_data
+median_income_new <- rename(median_income_new, "postcode" = "PC")
+customer_data <- merge(customer_data, median_income_new, by = "postcode")
+```
+
+
+```{r}
+# Add one more variable to the customer_data to indicate whether the device is traditional or new
+customer_data <- customer_data %>% mutate(Release = ifelse(line == "Active", 1, ifelse(line == "Advance", 1, 0)))
+```
+
+
+```{r}
+# Save our datasets in the "data" folder
+saveRDS(customer_data, file = "customer_data.Rds")
+saveRDS(customer_data_sleep, file = "customer_data_sleep.Rds")
+```
